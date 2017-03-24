@@ -1,0 +1,1 @@
+cbirt gl ./MandelbrotJuliaCUDA.run
