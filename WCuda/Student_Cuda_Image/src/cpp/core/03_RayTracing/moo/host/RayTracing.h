@@ -55,7 +55,6 @@ class RayTracing: public Animable_I<uchar4>
 
 	void toGM(Sphere*);
 	void toCM(Sphere*);
-	void toSM(Sphere*);
 
 	// Inputs
 	float dt;

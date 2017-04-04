@@ -2,6 +2,7 @@
 
 #include "MathTools.h"
 #include "Grid.h"
+#include "length_cm.h"
 
 #include "RayTracing.h"
 
@@ -39,7 +40,7 @@ Animable_I<uchar4>* RayTracingProvider::createAnimable()
     // Animation;
     float dt = 0.001;
 
-    int nbSphere = 200;
+    int nbSphere = LENGTH_CM;
 
     // Dimension
     int dw = 16 * 60;
