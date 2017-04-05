@@ -1,6 +1,6 @@
 #include <iostream>
-#include <stdlib.h>
-
+#include "Grid.h"
+#include "Device.h"
 
 using std::cout;
 using std::endl;
@@ -13,22 +13,17 @@ using std::endl;
  |*		Imported	 	*|
  \*-------------------------------------*/
 
-extern bool useHello(void);
-extern bool useAddVecteur(void);
-extern bool useSlice();
-extern bool useMonteCarlo();
+#include "MonteCarlo.h"
 
 /*--------------------------------------*\
  |*		Public			*|
  \*-------------------------------------*/
 
-int mainCore();
+bool useMonteCarlo();
 
 /*--------------------------------------*\
  |*		Private			*|
  \*-------------------------------------*/
-
-
 
 /*----------------------------------------------------------------------*\
  |*			Implementation 					*|
@@ -38,25 +33,33 @@ int mainCore();
  |*		Public			*|
  \*-------------------------------------*/
 
-int mainCore()
+bool useMonteCarlo()
     {
-    bool isOk = true;
-    //isOk &= useHello();
-    //isOk &= useAddVecteur();
-    //isOk &= useSlice();
-    isOk &= useMonteCarlo();
+    int n = 16;  //2^n gives the total number of samples
+    float targetHeight = 40.0;  //height of target
+    float tolerance = 0.01;  //tolerance between calculated pi and it's real value
 
-    cout << "\nisOK = " << isOk << endl;
-    cout << "\nEnd : mainCore" << endl;
+    // Grid cuda
+    int mp = Device::getMPCount();
+    int coreMP = Device::getCoreCountMP();
 
-    return isOk ? EXIT_SUCCESS : EXIT_FAILURE;
+    dim3 dg = dim3(16, 1, 1);  		// disons, a optimiser selon le gpu, peut drastiqument ameliorer ou baisser les performances
+    dim3 db = dim3(1024, 1, 1);   	// disons, a optimiser selon le gpu, peut drastiqument ameliorer ou baisser les performances
+    Grid grid(dg, db);
+
+    MonteCarlo montecarlo(grid, n, targetHeight, tolerance); // on passse la grille à AddVector pour pouvoir facilement la faire varier de l'extérieur (ici) pour trouver l'optimum
+    float pi = montecarlo.run();
+
+    montecarlo.display();
+
+    bool isOk = montecarlo.check();
+
+    return isOk;
     }
 
 /*--------------------------------------*\
  |*		Private			*|
  \*-------------------------------------*/
-
-
 
 /*----------------------------------------------------------------------*\
  |*			End	 					*|
