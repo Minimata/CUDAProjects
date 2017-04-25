@@ -6,28 +6,28 @@
 
 #include <stdio.h>
 
+using elem = unsigned int;
 
-
-__global__ void montecarlo(float* ptrDevNx, int nbSamples, curandState* tabDevGenerator);
+__global__ void montecarlo(elem* ptrDevNx, elem nbSamples, curandState* tabDevGenerator, float targetHeight);
 __global__ void setup_kernel_rand(curandState* tabDevGenerator, int deviceId);
 
-__device__ void reducIntraThread(float* tab_SM, int nbSamples, curandState* tabDevGenerator);
+__device__ void reducIntraThread(elem* tab_SM, elem nbSamples, curandState* tabDevGenerator, float targetHeight);
 __device__ float fPi(float x);
-__device__ int work(float* tab_SM, float x, float y);
+__device__ elem work(float x, float y);
 
 /**
  * output : void required !!
  */
-__global__ void montecarlo(float* ptrDevNx, int nbSamples, curandState* tabDevGenerator)
+__global__ void montecarlo(elem* ptrDevNx, elem nbSamples, curandState* tabDevGenerator, float targetHeight)
     {
-    extern __shared__ float tab_SM[]; //size defined in calling of kernel
+    extern __shared__ elem tab_SM[]; //size defined in calling of kernel
 
-    reducIntraThread(tab_SM, nbSamples, tabDevGenerator);
+    reducIntraThread(tab_SM, nbSamples, tabDevGenerator, targetHeight);
     __syncthreads();
-    reductionADD<float>(tab_SM, ptrDevNx);
+    reductionADD<elem>(tab_SM, ptrDevNx);
     }
 
-__device__ void reducIntraThread(float* tab_SM, int nbSamples, curandState* tabDevGenerator)
+__device__ void reducIntraThread(elem* tab_SM, elem nbSamples, curandState* tabDevGenerator, float targetHeight)
     {
     const int TID=Indice1D::tid();
     const int TID_LOCAL = Indice1D::tidLocal();
@@ -36,12 +36,12 @@ __device__ void reducIntraThread(float* tab_SM, int nbSamples, curandState* tabD
     float xAlea;
     float yAlea;
     float tmp = 0;
-    for (long i = 1; i <= nbSamples; i++)
+    for (elem i = 1; i <= nbSamples; i++)
 	{
 	xAlea = curand_uniform(&localGenerator);
 	yAlea = curand_uniform(&localGenerator);
 
-	tmp += work(tab_SM, xAlea, yAlea);
+	tmp += work(xAlea, targetHeight * yAlea);
 	}
 
     tab_SM[TID_LOCAL] = tmp;
@@ -49,7 +49,7 @@ __device__ void reducIntraThread(float* tab_SM, int nbSamples, curandState* tabD
     tabDevGenerator [TID] = localGenerator;
     }
 
-__device__ int work(float* tab_SM, float x, float y)
+__device__ elem work(float x, float y)
     {
     return (int) (fPi(x) >= y);
     }

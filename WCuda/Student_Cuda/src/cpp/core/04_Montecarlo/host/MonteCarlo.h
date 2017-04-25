@@ -4,13 +4,15 @@
 #include "Grid.h"
 #include <curand_kernel.h>
 
+using elem = unsigned int;
 
 class MonteCarlo
     {
 
     public:
-
-	MonteCarlo(const Grid& grid, int nbSamplesPower, float targetHeight = 4.0, float tolerance = 0.001);
+	MonteCarlo();
+	MonteCarlo(const MonteCarlo&);
+	MonteCarlo(const Grid& grid, elem nbSamplesPower, float targetHeight = 4.0, float tolerance = 0.001);
 
 	virtual ~MonteCarlo();
 
@@ -19,19 +21,22 @@ class MonteCarlo
 	float run();
 	bool check();
 	void display();
+	int getNbSuccessSamples();
 
     private:
 
 	dim3 dg;
 	dim3 db;
 
-	int nbSamples;
-	int nbThreads;
+	elem nbSamples;
+	elem nbThreads;
+	elem nbSamplesPerThread;
+	elem nbSuccessSamples;
 	float targetHeight;
 	float tolerance;
 
 	float pi;
-	float* ptrDevNx;
+	elem* ptrDevNx;
 	curandState* ptrDevCurand;
 
 	size_t sizeSM;

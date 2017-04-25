@@ -1,9 +1,12 @@
 #include <iostream>
 #include "Grid.h"
 #include "Device.h"
+#include <climits>
 
 using std::cout;
 using std::endl;
+
+using elem = unsigned int;
 
 /*----------------------------------------------------------------------*\
  |*			Declaration 					*|
@@ -35,8 +38,8 @@ bool useMonteCarlo();
 
 bool useMonteCarlo()
     {
-    int n = 16;  //2^n gives the total number of samples
-    float targetHeight = 40.0;  //height of target
+    elem n = UINT_MAX>>2;  //total number of samples
+    float targetHeight = 1.0;  //height of target
     float tolerance = 0.01;  //tolerance between calculated pi and it's real value
 
     // Grid cuda

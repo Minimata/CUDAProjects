@@ -8,13 +8,13 @@ using std::cout;
 using std::endl;
 
 
-extern __global__ void montecarlo(float* ptrDevNx, int nbmontecarlo, curandState* ptrDevCurand);
+extern __global__ void montecarlo(elem* ptrDevNx, elem nbSamples, curandState* ptrDevCurand, float targetHeight);
 extern __global__ void setup_kernel_rand(curandState* tabDevGenerator, int deviceId);
 
 #define PI 3.14159265358979323846264338327950288419716939937510
 
 
-MonteCarlo::MonteCarlo(const Grid& grid, int nbSamplesPower, float targetHeight, float tolerance)
+MonteCarlo::MonteCarlo(const Grid& grid, elem nbSamples, float targetHeight, float tolerance)
     {
     // Grid
 	{
@@ -23,12 +23,13 @@ MonteCarlo::MonteCarlo(const Grid& grid, int nbSamplesPower, float targetHeight,
 	}
 
     this->nbThreads = grid.threadCounts();  // one dimensionnal block
-
-    this->sizeSM = this->db.x * sizeof(float);  // size of SM tab
-    this->nbSamples = pow(2, nbSamplesPower);
+    this->sizeSM = this->db.x * sizeof(elem);  // size of SM tab, one dimensionnal block
+    this->nbSamples = nbSamples;
+    this->nbSamplesPerThread = nbSamples / nbThreads;
     this->targetHeight = targetHeight;
     this->tolerance = tolerance;
     this->pi = 0;
+    this->nbSuccessSamples = 0;
 
     size_t sizeCurand = this->nbThreads * sizeof(curandState) ;
     this->ptrDevCurand=NULL;
@@ -38,14 +39,14 @@ MonteCarlo::MonteCarlo(const Grid& grid, int nbSamplesPower, float targetHeight,
 
 	// MM (malloc Device)
 	    {
-	    Device::malloc(&ptrDevNx, sizeof(float));
-	    Device::memclear(ptrDevNx, sizeof(float));
+	    Device::malloc(&ptrDevNx, sizeof(elem));
+	    Device::memclear(ptrDevNx, sizeof(elem));
 
 	    Device::malloc(&ptrDevCurand, sizeCurand);
-	    Device::memclear(ptrDevCurand, sizeof(float));
+	    Device::memclear(ptrDevCurand, sizeCurand);
 	    }
 
-	Device::lastCudaError("AddVector MM (end allocation)"); // temp debug, facultatif
+	Device::lastCudaError("MonteCarlo MM (end allocation)"); // temp debug, facultatif
 	}
 
     }
@@ -57,32 +58,40 @@ MonteCarlo::~MonteCarlo(void)
 	Device::free(ptrDevNx);
 	Device::free(ptrDevCurand);
 
-	Device::lastCudaError("AddVector MM (end deallocation)"); // temp debug, facultatif
+	Device::lastCudaError("MonteCarlo MM (end deallocation)"); // temp debug, facultatif
 	}
     }
 
 
 float MonteCarlo::run()
     {
-    int nbSamplesPerThread = nbSamples / nbThreads;
     Device::lastCudaError("curand (before)"); // temp debug
-    setup_kernel_rand<<<dg, db>>>(ptrDevCurand, 0);
+    setup_kernel_rand<<<dg, db>>>(ptrDevCurand, Device::getDeviceId());
     Device::lastCudaError("montecarlo (before)"); // temp debug
-    montecarlo<<<dg, db, sizeSM>>>(ptrDevNx, nbSamplesPerThread, ptrDevCurand); // assynchrone
+    montecarlo<<<dg, db, sizeSM>>>(ptrDevNx, nbSamplesPerThread, ptrDevCurand, targetHeight); // assynchrone
     Device::lastCudaError("montecarlo (after)"); // temp debug
 
-    Device::memcpyDToH(&pi, ptrDevNx, sizeof(float)); // barriere synchronisation implicite
+    Device::memcpyDToH(&nbSuccessSamples, ptrDevNx, sizeof(elem)); // barriere synchronisation implicite
     //pi prend la valeur de Nx ici
 
+    /*
 
     cout << "Nx : " << pi << endl;
     cout << "target height : " << this->targetHeight << endl;
     cout << "nb Samples : " << this->nbSamples << endl;
     cout << "samples per thread : " << nbSamplesPerThread << endl;
 
-    pi *= this->targetHeight / this->nbSamples;
+    */
+
+    pi = 4.0 * nbSuccessSamples;
+    pi *= targetHeight / (nbSamplesPerThread * nbThreads);
 
     return pi;
+    }
+
+int MonteCarlo::getNbSuccessSamples()
+    {
+    return this->nbSuccessSamples;
     }
 
 void MonteCarlo::display()
