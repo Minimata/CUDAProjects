@@ -8,6 +8,8 @@ using std::endl;
 
 using elem = unsigned int;
 
+#define PI 3.14159265358979323846264338327950288419716939937510f
+
 /*----------------------------------------------------------------------*\
  |*			Declaration 					*|
  \*---------------------------------------------------------------------*/
@@ -55,7 +57,15 @@ bool useMonteCarloMultiGPU()
 
     montecarlo.display();
 
-    bool isOk = montecarlo.check();
+    pi *= 4.f;
+
+    cout << endl;
+    cout << "Estimation de Pi - valide uniquement si functionID = 0" << endl;
+    cout << "Pi = " << PI << endl;
+    cout << "Estimation = " << pi << endl;
+    cout << endl;
+
+    bool isOk = montecarlo.check(pi / 4.f);
 
     return isOk;
     }

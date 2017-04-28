@@ -8,15 +8,11 @@ typedef std::chrono::high_resolution_clock Clock;
 using std::cout;
 using std::endl;
 
-#define PI 3.14159265358979323846264338327950288419716939937510
 
-MonteCarloMultiGPU::MonteCarloMultiGPU(const Grid& grid, elem nbSamples, float targetHeight, float tolerance)
+MonteCarloMultiGPU::MonteCarloMultiGPU(const Grid& grid, elem nbSamples, float targetHeight, float right, float left, float tolerance, int functionID) :
+	MonteCarlo(grid, nbSamples, targetHeight, right, left, tolerance, functionID)
     {
     this->grid = grid;
-    this->nbSamples = nbSamples;
-    this->targetHeight = targetHeight;
-    this->tolerance = tolerance;
-    this->pi = 0;
     }
 
 MonteCarloMultiGPU::~MonteCarloMultiGPU()
@@ -37,7 +33,7 @@ float MonteCarloMultiGPU::run()
     for(int id = 0; id < nbDevices; id++)
 	{
 	Device::setDevice(id);
-	MonteCarlo m(grid, nbSamplesPerGPU, targetHeight, tolerance);
+	MonteCarlo m(grid, nbSamplesPerGPU, targetHeight, tolerance, functionID);
 	m.run();
 	r = m.getNbSuccessSamples();
 	}
@@ -49,17 +45,11 @@ float MonteCarloMultiGPU::run()
               << std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count()
               << " nanoseconds" << std::endl;
 
-    cout << "R : " << r << endl;
-
     r /= nbDevices;
-    pi =  4.0 * r * targetHeight / (nbSamplesPerGPU);
-    return pi;
+    integral =  r * targetHeight / (nbSamplesPerGPU);
+    return integral;
     }
 
-bool MonteCarloMultiGPU::check()
-    {
-    return std::fabs(pi - PI) < tolerance;
-    }
 
 void MonteCarloMultiGPU::display()
     {
@@ -67,8 +57,7 @@ void MonteCarloMultiGPU::display()
     cout << "/TP montecarloMultiGPU/" << endl;
     cout << "///////////////////////" << endl;
 
-    cout << "Exact Pi : \t" << PI << endl;
-    cout << "Estimation : \t" << this->pi << endl;
+    cout << "Estimation : \t" << this->integral << endl;
 
     cout << "///////////////////////" << endl;
     cout << "//////////END//////////" << endl;

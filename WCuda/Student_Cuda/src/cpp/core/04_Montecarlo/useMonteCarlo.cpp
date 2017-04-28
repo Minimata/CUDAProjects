@@ -8,6 +8,9 @@ using std::endl;
 
 using elem = unsigned int;
 
+
+#define PI 3.14159265358979323846264338327950288419716939937510f
+
 /*----------------------------------------------------------------------*\
  |*			Declaration 					*|
  \*---------------------------------------------------------------------*/
@@ -39,8 +42,10 @@ bool useMonteCarlo();
 bool useMonteCarlo()
     {
     elem n = UINT_MAX>>2;  //total number of samples
-    float targetHeight = 1.0;  //height of target
-    float tolerance = 0.01;  //tolerance between calculated pi and it's real value
+    float targetHeight = 1.0;  //height of target, keep it positive
+    float right = 1.f; //Keep it positive
+    float left = 0.f;  //Keep it positive
+    float tolerance = 0.01;  //tolerance between calculated integral and its real value
 
     // Grid cuda
     int mp = Device::getMPCount();
@@ -50,12 +55,20 @@ bool useMonteCarlo()
     dim3 db = dim3(1024, 1, 1);   	// disons, a optimiser selon le gpu, peut drastiqument ameliorer ou baisser les performances
     Grid grid(dg, db);
 
-    MonteCarlo montecarlo(grid, n, targetHeight, tolerance); // on passse la grille à AddVector pour pouvoir facilement la faire varier de l'extérieur (ici) pour trouver l'optimum
+    MonteCarlo montecarlo(grid, n, targetHeight, right, left, tolerance, 0);
     float pi = montecarlo.run();
 
     montecarlo.display();
 
-    bool isOk = montecarlo.check();
+    pi *= 4;
+
+    cout << endl;
+    cout << "Estimation de Pi - valide uniquement si functionID = 0" << endl;
+    cout << "Pi = " << PI << endl;
+    cout << "Estimation = " << pi << endl;
+    cout << endl;
+
+    bool isOk = montecarlo.check(pi / 4.f);
 
     return isOk;
     }

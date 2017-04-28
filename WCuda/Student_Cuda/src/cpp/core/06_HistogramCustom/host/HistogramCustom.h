@@ -34,11 +34,11 @@ class HistogramCustom
 	int nbThreads;
 
 	//GM
-	int** ptrDevData;
-	int sizeOctet;
+	int* ptrDevData;
+	size_t sizeOctet;
 
 	//SM
 	size_t sizeSM;
-	int dataSizeSM;
+	int bufferSizeSM;
 
     };

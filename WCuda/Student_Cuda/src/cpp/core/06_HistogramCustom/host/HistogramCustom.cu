@@ -1,7 +1,6 @@
 #include "HistogramCustom.h"
 
 #include <iostream>
-#include <cmath>
 
 #include "Device.h"
 
@@ -10,7 +9,7 @@
 using std::cout;
 using std::endl;
 
-extern __global__ void histogramCustom(int** ptrDevData, int dataMax, int dataSizeSM);
+extern __global__ void histogramCustom(int* ptrDevData, int dataMax, int dataSize, int bufferSizeSM);
 
 HistogramCustom::HistogramCustom(const Grid& grid, int dataMax)
     {
@@ -34,8 +33,10 @@ HistogramCustom::HistogramCustom(const Grid& grid, int dataMax)
 
     //SM
     this->sizeSM = dataMax * sizeof(int);
+    bufferSizeSM = 128 / sizeof(int);
 
     //Output
+    histogram = nullptr;
 
     // MM
 	{
@@ -44,7 +45,7 @@ HistogramCustom::HistogramCustom(const Grid& grid, int dataMax)
 	    {
 	    Device::malloc(&ptrDevData, sizeOctet);
 	    Device::memclear(ptrDevData, sizeOctet);
-	    //Device::memcpyHToD(ptrDevData, data, sizeOctet);
+	    Device::memcpyHToD(ptrDevData, data, sizeOctet);
 	    }
 
 	Device::lastCudaError("Histogram (end allocation)"); // temp debug, facultatif
@@ -56,7 +57,7 @@ HistogramCustom::~HistogramCustom(void)
     {
     //MM (device free)
 	{
-	//Device::free (ptrDevNx);
+	Device::free(ptrDevData);
 
 	Device::lastCudaError("Histogram MM (end deallocation)"); // temp debug, facultatif
 	}
@@ -65,11 +66,15 @@ HistogramCustom::~HistogramCustom(void)
 void HistogramCustom::run()
     {
     Device::lastCudaError("Histogram (before)"); // temp debug
-    histogramCustom<<<dg, db, sizeSM + dataSizeSM>>>(ptrDevData, dataMax, dataSizeSM); // assynchrone
+    histogramCustom<<<dg, db, sizeSM + bufferSizeSM>>>(ptrDevData, dataMax, dataSize, bufferSizeSM); // assynchrone
     Device::lastCudaError("Histogram (after)"); // temp debug
 
-    Device::memcpyDToH(&histogram, ptrDevData, dataMax*sizeof(int)); // barriere synchronisation implicite
+    int* result = new int[dataMax]();
+
+    Device::memcpyDToH(result, ptrDevData, dataMax*sizeof(int)); // barriere synchronisation implicite
     Device::memclear(ptrDevData, sizeOctet); // On supprime les valeurs laissées en trop
+
+    histogram = result;
     }
 
 void HistogramCustom::display()
@@ -77,6 +82,12 @@ void HistogramCustom::display()
     cout << "///////////////////////" << endl;
     cout << "//////TP histogram/////" << endl;
     cout << "///////////////////////" << endl;
+
+    cout << "The Histogram : " << endl;
+        for(int i = 0; i < dataMax; i++)
+    	{
+    	cout << "frequency of " << i << " : " << histogram[i] << endl;
+    	}
 
     cout << "///////////////////////" << endl;
     cout << "//////////END//////////" << endl;

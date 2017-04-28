@@ -9,13 +9,12 @@ using std::cout;
 using std::endl;
 
 
-extern __global__ void montecarlo(elem* ptrDevNx, elem nbSamples, curandState* ptrDevCurand, float targetHeight);
+extern __global__ void montecarlo(elem* ptrDevNx, elem nbSamples, curandState* ptrDevCurand, float targetHeight, float right, float left, int functionID);
 extern __global__ void setup_kernel_rand(curandState* tabDevGenerator, int deviceId);
 
-#define PI 3.14159265358979323846264338327950288419716939937510
 
 
-MonteCarlo::MonteCarlo(const Grid& grid, elem nbSamples, float targetHeight, float tolerance)
+MonteCarlo::MonteCarlo(const Grid& grid, elem nbSamples, float targetHeight, float right, float left, float tolerance, int functionID)
     {
     // Grid
 	{
@@ -23,13 +22,16 @@ MonteCarlo::MonteCarlo(const Grid& grid, elem nbSamples, float targetHeight, flo
 	this->db = grid.db;
 	}
 
+    this->left = left;
+    this->right = right;
+    this->functionID = functionID;
     this->nbThreads = grid.threadCounts();  // one dimensionnal block
     this->sizeSM = this->db.x * sizeof(elem);  // size of SM tab, one dimensionnal block
     this->nbSamples = nbSamples;
     this->nbSamplesPerThread = nbSamples / nbThreads;
     this->targetHeight = targetHeight;
     this->tolerance = tolerance;
-    this->pi = 0;
+    this->integral = 0;
     this->nbSuccessSamples = 0;
 
     size_t sizeCurand = this->nbThreads * sizeof(curandState) ;
@@ -72,7 +74,7 @@ float MonteCarlo::run()
     Device::lastCudaError("curand (before)"); // temp debug
     setup_kernel_rand<<<dg, db>>>(ptrDevCurand, Device::getDeviceId());
     Device::lastCudaError("montecarlo (before)"); // temp debug
-    montecarlo<<<dg, db, sizeSM>>>(ptrDevNx, nbSamplesPerThread, ptrDevCurand, targetHeight); // assynchrone
+    montecarlo<<<dg, db, sizeSM>>>(ptrDevNx, nbSamplesPerThread, ptrDevCurand, targetHeight, right, left, functionID); // assynchrone
     Device::lastCudaError("montecarlo (after)"); // temp debug
 
     Device::memcpyDToH(&nbSuccessSamples, ptrDevNx, sizeof(elem)); // barriere synchronisation implicite
@@ -93,13 +95,10 @@ float MonteCarlo::run()
 
     */
 
+    integral = nbSuccessSamples;
+    integral *= targetHeight / (nbSamplesPerThread * nbThreads);
 
-    std::cout << "Success samples in run : " << this->nbSuccessSamples << std::endl;
-
-    pi = 4.0 * nbSuccessSamples;
-    pi *= targetHeight / (nbSamplesPerThread * nbThreads);
-
-    return pi;
+    return integral;
     }
 
 int MonteCarlo::getNbSuccessSamples()
@@ -114,15 +113,14 @@ void MonteCarlo::display()
     cout << "/////TP montecarlo/////" << endl;
     cout << "///////////////////////" << endl;
 
-    cout << "Exact Pi : \t" << PI << endl;
-    cout << "Estimation : \t" << this->pi << endl;
+    cout << "Estimation intégrale : \t" << this->integral << endl;
 
     cout << "///////////////////////" << endl;
     cout << "//////////END//////////" << endl;
     cout << "///////////////////////" << endl;
     }
 
-bool MonteCarlo::check()
+bool MonteCarlo::check(float value)
     {
-    return std::fabs(this->pi - PI) < this->tolerance;
+    return std::fabs(this->integral - value) < this->tolerance;
     }

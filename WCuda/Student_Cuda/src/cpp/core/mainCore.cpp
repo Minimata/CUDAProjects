@@ -50,7 +50,7 @@ int mainCore()
     //isOk &= useAddVecteur();
     //isOk &= useSlice();
     isOk &= useMonteCarlo();
-    isOk &= useMonteCarloMultiGPU();
+    //isOk &= useMonteCarloMultiGPU();
     //isOk &= useHistogram();
     //isOk &= useHistogramCustom();
 

@@ -12,19 +12,20 @@ class MonteCarlo
     public:
 	MonteCarlo();
 	MonteCarlo(const MonteCarlo&);
-	MonteCarlo(const Grid& grid, elem nbSamplesPower, float targetHeight = 4.0, float tolerance = 0.001);
+	MonteCarlo(const Grid& grid, elem nbSamples, float targetHeight = 4.0, float right = 1.f, float left = 0.f, float tolerance = 0.001, int functionID = 0);
 
 	virtual ~MonteCarlo();
 
     public:
 
-	float run();
-	bool check();
-	void display();
+	virtual float run();
+	bool check(float value);
+	virtual void display();
 	int getNbSuccessSamples();
 
-    private:
+    protected:
 
+	Grid grid;
 	dim3 dg;
 	dim3 db;
 
@@ -33,9 +34,11 @@ class MonteCarlo
 	elem nbSamplesPerThread;
 	elem nbSuccessSamples;
 	float targetHeight;
+	float left, right;
+	int functionID;
 	float tolerance;
 
-	float pi;
+	float integral;
 	elem* ptrDevNx;
 	curandState* ptrDevCurand;
 
