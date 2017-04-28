@@ -1,8 +1,7 @@
 #include <iostream>
-#include <stdlib.h>
-#include <chrono>
-typedef std::chrono::high_resolution_clock Clock;
-
+#include "Grid.h"
+#include "Device.h"
+#include <climits>
 
 using std::cout;
 using std::endl;
@@ -15,25 +14,17 @@ using std::endl;
  |*		Imported	 	*|
  \*-------------------------------------*/
 
-extern bool useHello(void);
-extern bool useAddVecteur(void);
-extern bool useSlice();
-extern bool useMonteCarlo();
-extern bool useMonteCarloMultiGPU();
-extern bool useHistogram();
-extern bool useHistogramCustom();
+#include "Histogram.h"
 
 /*--------------------------------------*\
  |*		Public			*|
  \*-------------------------------------*/
 
-int mainCore();
+bool useHistogram();
 
 /*--------------------------------------*\
  |*		Private			*|
  \*-------------------------------------*/
-
-
 
 /*----------------------------------------------------------------------*\
  |*			Implementation 					*|
@@ -43,39 +34,28 @@ int mainCore();
  |*		Public			*|
  \*-------------------------------------*/
 
-int mainCore()
+bool useHistogram()
     {
-    bool isOk = true;
+    // Grid cuda
+    int mp = Device::getMPCount();
+    int coreMP = Device::getCoreCountMP();
 
+    dim3 dg = dim3(16, 1, 1);  		// disons, a optimiser selon le gpu, peut drastiqument ameliorer ou baisser les performances
+    dim3 db = dim3(256, 1, 1);   	// disons, a optimiser selon le gpu, peut drastiqument ameliorer ou baisser les performances
+    Grid grid(dg, db);
 
-    auto t1 = Clock::now();
+    Histogram histogram(grid);
+    histogram.run();
+    histogram.display();
 
-    //isOk &= useHello();
-    //isOk &= useAddVecteur();
-    //isOk &= useSlice();
-    //isOk &= useMonteCarlo();
-    //isOk &= useMonteCarloMultiGPU();
-    isOk &= useHistogram();
-    //isOk &= useHistogramCustom();
+    bool isOk = histogram.check();
 
-
-    auto t2 = Clock::now();
-
-    cout << "\nisOK = " << isOk << endl;
-    std::cout << "Performance : "
-              << std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count()
-              << " nanoseconds" << std::endl;
-
-    cout << "\nEnd : mainCore" << endl;
-
-    return isOk ? EXIT_SUCCESS : EXIT_FAILURE;
+    return isOk;
     }
 
 /*--------------------------------------*\
  |*		Private			*|
  \*-------------------------------------*/
-
-
 
 /*----------------------------------------------------------------------*\
  |*			End	 					*|

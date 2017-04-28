@@ -27,17 +27,18 @@ float MonteCarloMultiGPU::run()
     {
     int r = 0;
     int nbDevices = Device::getDeviceCount();
+    elem nbSamplesPerGPU = nbSamples / nbDevices;
 #pragma omp parallel for reduction(+ : r)
     for(int id = 0; id < nbDevices; id++)
 	{
 	Device::setDevice(id);
-	MonteCarlo m(grid, nbSamples, targetHeight, tolerance);
+	MonteCarlo m(grid, nbSamplesPerGPU, targetHeight, tolerance);
 	m.run();
 	r = m.getNbSuccessSamples();
 	}
 
     r /= nbDevices;
-    pi =  4.0 * r * targetHeight / (nbSamples);
+    pi =  4.0 * r * targetHeight / (nbSamplesPerGPU);
     return pi;
     }
 

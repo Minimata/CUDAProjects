@@ -38,7 +38,7 @@ bool useMonteCarloMultiGPU();
 
 bool useMonteCarloMultiGPU()
     {
-    elem n = UINT_MAX>>1;  //number of samples, here max(unsigned long long int) / 2
+    elem n = UINT_MAX;  //number of samples, here max(unsigned long long int) / 4
     float targetHeight = 4.0;  //height of target
     float tolerance = 0.01;  //tolerance between calculated pi and it's real value
 

@@ -51,7 +51,7 @@ __device__ void reducIntraThread(elem* tab_SM, elem nbSamples, curandState* tabD
 
 __device__ elem work(float x, float y)
     {
-    return (int) (fPi(x) >= y);
+    return (elem) (fPi(x) >= y);
     }
 
 __device__ float fPi(float x)
