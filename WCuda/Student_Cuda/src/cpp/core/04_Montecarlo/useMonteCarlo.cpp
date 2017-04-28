@@ -1,11 +1,12 @@
 #include <iostream>
-#include <stdlib.h>
-#include <chrono>
-typedef std::chrono::high_resolution_clock Clock;
-
+#include "Grid.h"
+#include "Device.h"
+#include <climits>
 
 using std::cout;
 using std::endl;
+
+using elem = unsigned int;
 
 /*----------------------------------------------------------------------*\
  |*			Declaration 					*|
@@ -15,23 +16,17 @@ using std::endl;
  |*		Imported	 	*|
  \*-------------------------------------*/
 
-extern bool useHello(void);
-extern bool useAddVecteur(void);
-extern bool useSlice();
-extern bool useMonteCarlo();
-extern bool useMonteCarloMultiGPU();
+#include "MonteCarlo.h"
 
 /*--------------------------------------*\
  |*		Public			*|
  \*-------------------------------------*/
 
-int mainCore();
+bool useMonteCarlo();
 
 /*--------------------------------------*\
  |*		Private			*|
  \*-------------------------------------*/
-
-
 
 /*----------------------------------------------------------------------*\
  |*			Implementation 					*|
@@ -41,37 +36,33 @@ int mainCore();
  |*		Public			*|
  \*-------------------------------------*/
 
-int mainCore()
+bool useMonteCarlo()
     {
-    bool isOk = true;
+    elem n = UINT_MAX>>2;  //total number of samples
+    float targetHeight = 1.0;  //height of target
+    float tolerance = 0.01;  //tolerance between calculated pi and it's real value
 
+    // Grid cuda
+    int mp = Device::getMPCount();
+    int coreMP = Device::getCoreCountMP();
 
-    auto t1 = Clock::now();
+    dim3 dg = dim3(16, 1, 1);  		// disons, a optimiser selon le gpu, peut drastiqument ameliorer ou baisser les performances
+    dim3 db = dim3(1024, 1, 1);   	// disons, a optimiser selon le gpu, peut drastiqument ameliorer ou baisser les performances
+    Grid grid(dg, db);
 
-    //isOk &= useHello();
-    //isOk &= useAddVecteur();
-    //isOk &= useSlice();
-    //isOk &= useMonteCarlo();
-    isOk &= useMonteCarloMultiGPU();
+    MonteCarlo montecarlo(grid, n, targetHeight, tolerance); // on passse la grille à AddVector pour pouvoir facilement la faire varier de l'extérieur (ici) pour trouver l'optimum
+    float pi = montecarlo.run();
 
+    montecarlo.display();
 
-    auto t2 = Clock::now();
+    bool isOk = montecarlo.check();
 
-    cout << "\nisOK = " << isOk << endl;
-    std::cout << "Performance : "
-              << std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count()
-              << " nanoseconds" << std::endl;
-
-    cout << "\nEnd : mainCore" << endl;
-
-    return isOk ? EXIT_SUCCESS : EXIT_FAILURE;
+    return isOk;
     }
 
 /*--------------------------------------*\
  |*		Private			*|
  \*-------------------------------------*/
-
-
 
 /*----------------------------------------------------------------------*\
  |*			End	 					*|

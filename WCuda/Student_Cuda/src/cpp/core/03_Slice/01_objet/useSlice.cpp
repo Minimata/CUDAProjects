@@ -1,8 +1,7 @@
 #include <iostream>
-#include <stdlib.h>
-#include <chrono>
-typedef std::chrono::high_resolution_clock Clock;
-
+#include "Grid.h"
+#include "Device.h"
+#include <climits>
 
 using std::cout;
 using std::endl;
@@ -15,23 +14,17 @@ using std::endl;
  |*		Imported	 	*|
  \*-------------------------------------*/
 
-extern bool useHello(void);
-extern bool useAddVecteur(void);
-extern bool useSlice();
-extern bool useMonteCarlo();
-extern bool useMonteCarloMultiGPU();
+#include "Slice.h"
 
 /*--------------------------------------*\
  |*		Public			*|
  \*-------------------------------------*/
 
-int mainCore();
+bool useSlice(void);
 
 /*--------------------------------------*\
  |*		Private			*|
  \*-------------------------------------*/
-
-
 
 /*----------------------------------------------------------------------*\
  |*			Implementation 					*|
@@ -41,37 +34,31 @@ int mainCore();
  |*		Public			*|
  \*-------------------------------------*/
 
-int mainCore()
+bool useSlice()
     {
-    bool isOk = true;
+    int n = 10000; //number of slices
+    float tolerance = 0.001;
+    // Grid cuda
+    int mp = Device::getMPCount();
+    int coreMP = Device::getCoreCountMP();
 
+    dim3 dg = dim3(mp, 2, 1);  		// disons, a optimiser selon le gpu, peut drastiqument ameliorer ou baisser les performances
+    dim3 db = dim3(1024, 1, 1);   	// disons, a optimiser selon le gpu, peut drastiqument ameliorer ou baisser les performances
+    Grid grid(dg, db);
 
-    auto t1 = Clock::now();
+    Slice slice(grid, n, tolerance); // on passse la grille à AddVector pour pouvoir facilement la faire varier de l'extérieur (ici) pour trouver l'optimum
+    float pi = slice.run();
 
-    //isOk &= useHello();
-    //isOk &= useAddVecteur();
-    //isOk &= useSlice();
-    //isOk &= useMonteCarlo();
-    isOk &= useMonteCarloMultiGPU();
+    slice.display();
 
+    bool isOk = slice.check();
 
-    auto t2 = Clock::now();
-
-    cout << "\nisOK = " << isOk << endl;
-    std::cout << "Performance : "
-              << std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count()
-              << " nanoseconds" << std::endl;
-
-    cout << "\nEnd : mainCore" << endl;
-
-    return isOk ? EXIT_SUCCESS : EXIT_FAILURE;
+    return isOk;
     }
 
 /*--------------------------------------*\
  |*		Private			*|
  \*-------------------------------------*/
-
-
 
 /*----------------------------------------------------------------------*\
  |*			End	 					*|
