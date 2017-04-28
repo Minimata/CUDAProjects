@@ -2,6 +2,8 @@
 #include <cmath>
 #include <iostream>
 #include "Device.h"
+#include <chrono>
+typedef std::chrono::high_resolution_clock Clock;
 
 using std::cout;
 using std::endl;
@@ -25,9 +27,12 @@ MonteCarloMultiGPU::~MonteCarloMultiGPU()
 
 float MonteCarloMultiGPU::run()
     {
-    int r = 0;
+    elem r = 0;
     int nbDevices = Device::getDeviceCount();
     elem nbSamplesPerGPU = nbSamples / nbDevices;
+
+    auto t1 = Clock::now();
+
 #pragma omp parallel for reduction(+ : r)
     for(int id = 0; id < nbDevices; id++)
 	{
@@ -36,6 +41,15 @@ float MonteCarloMultiGPU::run()
 	m.run();
 	r = m.getNbSuccessSamples();
 	}
+
+
+    auto t2 = Clock::now();
+
+    std::cout << "Performance Montecarlo MultiGPU : "
+              << std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count()
+              << " nanoseconds" << std::endl;
+
+    cout << "R : " << r << endl;
 
     r /= nbDevices;
     pi =  4.0 * r * targetHeight / (nbSamplesPerGPU);

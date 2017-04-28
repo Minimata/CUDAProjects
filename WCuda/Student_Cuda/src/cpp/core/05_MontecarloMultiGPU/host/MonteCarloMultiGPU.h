@@ -16,7 +16,7 @@ class MonteCarloMultiGPU
 
     private:
 	Grid grid;
-	int nbSamples;
+	elem nbSamples;
 	float targetHeight;
 	float tolerance;
 	float pi;

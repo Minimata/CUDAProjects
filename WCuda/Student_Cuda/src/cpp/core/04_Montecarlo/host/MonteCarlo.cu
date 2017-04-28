@@ -1,8 +1,9 @@
 #include <iostream>
-
+#include <chrono>
 #include "Device.h"
 #include <cmath>
 #include "MonteCarlo.h"
+typedef std::chrono::high_resolution_clock Clock;
 
 using std::cout;
 using std::endl;
@@ -65,6 +66,9 @@ MonteCarlo::~MonteCarlo(void)
 
 float MonteCarlo::run()
     {
+
+    auto t1 = Clock::now();
+
     Device::lastCudaError("curand (before)"); // temp debug
     setup_kernel_rand<<<dg, db>>>(ptrDevCurand, Device::getDeviceId());
     Device::lastCudaError("montecarlo (before)"); // temp debug
@@ -73,6 +77,12 @@ float MonteCarlo::run()
 
     Device::memcpyDToH(&nbSuccessSamples, ptrDevNx, sizeof(elem)); // barriere synchronisation implicite
     //pi prend la valeur de Nx ici
+
+    auto t2 = Clock::now();
+
+    std::cout << "Performance Montecarlo : "
+              << std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count()
+              << " nanoseconds" << std::endl;
 
     /*
 
@@ -83,6 +93,9 @@ float MonteCarlo::run()
 
     */
 
+
+    std::cout << "Success samples in run : " << this->nbSuccessSamples << std::endl;
+
     pi = 4.0 * nbSuccessSamples;
     pi *= targetHeight / (nbSamplesPerThread * nbThreads);
 
@@ -91,6 +104,7 @@ float MonteCarlo::run()
 
 int MonteCarlo::getNbSuccessSamples()
     {
+    std::cout << "Success samples : " << this->nbSuccessSamples << std::endl;
     return this->nbSuccessSamples;
     }
 

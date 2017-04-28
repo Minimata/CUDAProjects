@@ -1,7 +1,5 @@
 #include <iostream>
 #include <stdlib.h>
-#include <chrono>
-typedef std::chrono::high_resolution_clock Clock;
 
 
 using std::cout;
@@ -48,23 +46,16 @@ int mainCore()
     bool isOk = true;
 
 
-    auto t1 = Clock::now();
-
     //isOk &= useHello();
     //isOk &= useAddVecteur();
     //isOk &= useSlice();
-    //isOk &= useMonteCarlo();
-    //isOk &= useMonteCarloMultiGPU();
-    isOk &= useHistogram();
+    isOk &= useMonteCarlo();
+    isOk &= useMonteCarloMultiGPU();
+    //isOk &= useHistogram();
     //isOk &= useHistogramCustom();
 
 
-    auto t2 = Clock::now();
-
     cout << "\nisOK = " << isOk << endl;
-    std::cout << "Performance : "
-              << std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count()
-              << " nanoseconds" << std::endl;
 
     cout << "\nEnd : mainCore" << endl;
 
